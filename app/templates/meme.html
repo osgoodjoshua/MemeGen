@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Meme{% endblock %}
+
+{% block content %}
+    <h1>Create Your Meme</h1>
+    <form method="post" action="/api/captions">
+        <div class="form-group">
+            <label>Select Image</label>
+            <div class="row">
+                {% for image in images %}
+                    <div class="col-md-3 mb-4">
+                        <div class="card">
+                            <img src="{{ image.url }}" class="card-img-top img-fluid" alt="Meme Image">
+                            <div class="card-body text-center">
+                                <input class="form-check-input" type="radio" name="image_id" id="image{{ image.id }}" value="{{ image.id }}" required>
+                                <label class="form-check-label" for="image{{ image.id }}">
+                                    Select
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="caption">Caption</label>
+            <input type="text" class="form-control" id="caption" name="text" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Create Meme</button>
+    </form>
+{% endblock %}
