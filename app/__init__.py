@@ -36,6 +36,8 @@ def create_app():
 
     return app
 
+app = create_app()
+
 @login_manager.user_loader
 def load_user(user_id):
     from app.models import User
