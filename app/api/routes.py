@@ -3,14 +3,15 @@ from app import db
 from app.models import Image, Caption
 from app.api import api_bp
 
-# Enable CORS
-from flask_cors import CORS
-CORS(api_bp)
-
 @api_bp.route('/images', methods=['GET'])
 def get_images():
     images = Image.query.all()
     return jsonify([{'id': image.id, 'url': image.url} for image in images])
+
+@api_bp.route('/captions', methods=['GET'])
+def get_captions():
+    captions = Caption.query.all()
+    return jsonify([{'id': caption.id, 'text': caption.text, 'image_id': caption.image_id, 'url': caption.image.url} for caption in captions])
 
 @api_bp.route('/captions', methods=['POST'])
 def create_caption():
