@@ -1,7 +1,15 @@
 from flask import jsonify, request
+from werkzeug.utils import secure_filename
+import os
 from app import db
 from app.models import Image, Caption
 from app.api import api_bp
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+UPLOAD_FOLDER = 'path/to/upload/folder'
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @api_bp.route('/images', methods=['GET'])
 def get_images():
@@ -53,3 +61,27 @@ def delete_caption(caption_id):
     db.session.delete(caption)
     db.session.commit()
     return '', 204
+
+@api_bp.route('/upload', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        file.save(filepath)
+        image_url = f'/static/uploads/{filename}'  # Adjust this URL based on your static files setup
+
+        # Save image record in the database
+        image = Image(url=image_url)
+        db.session.add(image)
+        db.session.commit()
+
+        return jsonify({'id': image.id, 'url': image_url}), 200
+
+    return jsonify({'error': 'File type not allowed'}), 400
