@@ -10,6 +10,7 @@ class User(UserMixin, db.Model):
 class Image(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     url = db.Column(db.String(150), unique=True, nullable=False)
+    is_core = db.Column(db.Boolean, default=False)
 
 class Caption(db.Model):
     id = db.Column(db.Integer, primary_key=True)
