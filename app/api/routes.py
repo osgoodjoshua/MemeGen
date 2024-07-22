@@ -14,7 +14,7 @@ def allowed_file(filename):
 
 @api_bp.route('/images', methods=['GET'])
 def get_images():
-    images = Image.query.all()
+    images = Image.query.filter_by(is_core=True).all()
     return jsonify([{'id': image.id, 'url': image.url} for image in images])
 
 @api_bp.route('/captions', methods=['GET'])
