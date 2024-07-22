@@ -1,3 +1,4 @@
+import uuid
 from flask import jsonify, request
 from werkzeug.utils import secure_filename
 import os
@@ -73,10 +74,11 @@ def upload_file():
 
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
-        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        unique_filename = f"{uuid.uuid4().hex}_{filename}"
+        filepath = os.path.join(UPLOAD_FOLDER, unique_filename)
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
         file.save(filepath)
-        image_url = f'/static/uploads/{filename}'  # Adjust this URL based on your static files setup
+        image_url = f'/static/uploads/{unique_filename}'  # Adjust this URL based on your static files setup
 
         # Save image record in the database
         image = Image(url=image_url)
