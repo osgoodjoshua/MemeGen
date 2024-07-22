@@ -6,7 +6,7 @@ from app.models import Image, Caption
 from app.api import api_bp
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-UPLOAD_FOLDER = 'path/to/upload/folder'
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'static', 'uploads')
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -74,6 +74,7 @@ def upload_file():
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         filepath = os.path.join(UPLOAD_FOLDER, filename)
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
         file.save(filepath)
         image_url = f'/static/uploads/{filename}'  # Adjust this URL based on your static files setup
 
