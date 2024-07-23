@@ -1,26 +1,23 @@
-import uuid
-from flask import jsonify, request
-from werkzeug.utils import secure_filename
-import os
+from flask import jsonify, request, current_app
 from app import db
 from app.models import Image, Caption
 from app.api import api_bp
-
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'static', 'uploads')
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+import os
 
 @api_bp.route('/images', methods=['GET'])
 def get_images():
-    images = Image.query.filter_by(is_core=True).all()
-    return jsonify([{'id': image.id, 'url': image.url} for image in images])
+    images = Image.query.all()
+    return jsonify([{'id': image.id, 'url': image.url, 'is_core': image.is_core} for image in images])
 
 @api_bp.route('/captions', methods=['GET'])
 def get_captions():
     captions = Caption.query.all()
-    return jsonify([{'id': caption.id, 'text': caption.text, 'image_id': caption.image_id, 'url': caption.image.url} for caption in captions])
+    return jsonify([{
+        'id': caption.id,
+        'text': caption.text,
+        'image_id': caption.image_id,
+        'url': caption.image.url if caption.image.url.startswith('http') else f"{request.url_root[:-1]}{caption.image.url}"
+    } for caption in captions])
 
 @api_bp.route('/captions', methods=['POST'])
 def create_caption():
@@ -40,7 +37,12 @@ def create_caption():
 @api_bp.route('/captions/<int:caption_id>', methods=['GET'])
 def get_caption(caption_id):
     caption = Caption.query.get_or_404(caption_id)
-    return jsonify({'id': caption.id, 'text': caption.text, 'image_id': caption.image_id})
+    return jsonify({
+        'id': caption.id,
+        'text': caption.text,
+        'image_id': caption.image_id,
+        'url': caption.image.url if caption.image.url.startswith('http') else f"{request.url_root[:-1]}{caption.image.url}"
+    })
 
 @api_bp.route('/captions/<int:caption_id>', methods=['PUT'])
 def update_caption(caption_id):
@@ -67,24 +69,17 @@ def delete_caption(caption_id):
 def upload_file():
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400
-
     file = request.files['file']
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
-
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        unique_filename = f"{uuid.uuid4().hex}_{filename}"
-        filepath = os.path.join(UPLOAD_FOLDER, unique_filename)
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    if file:
+        filename = 'meme.jpg'  # or use secure_filename(file.filename)
+        filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
-        image_url = f'/static/uploads/{unique_filename}'  # Adjust this URL based on your static files setup
-
-        # Save image record in the database
-        image = Image(url=image_url)
+        
+        # Save to database
+        image = Image(url=f'/static/uploads/{filename}', is_core=False)
         db.session.add(image)
         db.session.commit()
-
-        return jsonify({'id': image.id, 'url': image_url}), 200
-
-    return jsonify({'error': 'File type not allowed'}), 400
+        
+        return jsonify({'id': image.id, 'url': f'{request.url_root[:-1]}/static/uploads/{filename}'})
