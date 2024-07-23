@@ -1,5 +1,6 @@
 from flask import jsonify, request, current_app
 from app import db
+from werkzeug.utils import secure_filename
 from app.models import Image, Caption
 from app.api import api_bp
 import os
@@ -73,13 +74,20 @@ def upload_file():
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
     if file:
-        filename = 'meme.jpg'  # or use secure_filename(file.filename)
-        filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+        filename = secure_filename(file.filename)
+        upload_folder = current_app.config['UPLOAD_FOLDER']
+        
+        # Ensure the upload folder exists
+        if not os.path.exists(upload_folder):
+            os.makedirs(upload_folder)
+
+        filepath = os.path.join(upload_folder, filename)
         file.save(filepath)
         
-        # Save to database
+        # Create the image record in the database
         image = Image(url=f'/static/uploads/{filename}', is_core=False)
         db.session.add(image)
         db.session.commit()
         
-        return jsonify({'id': image.id, 'url': f'{request.url_root[:-1]}/static/uploads/{filename}'})
+        return jsonify({'message': 'File uploaded successfully', 'image_id': image.id, 'image_url': image.url}), 201
+    return jsonify({'error': 'File upload failed'}), 500
