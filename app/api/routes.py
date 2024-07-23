@@ -16,7 +16,7 @@ def get_captions():
         'id': caption.id,
         'text': caption.text,
         'image_id': caption.image_id,
-        'url': caption.image.url if caption.image.url.startswith('http') else f"{request.url_root[:-1]}{caption.image.url}"
+        'url': f"{request.url_root[:-1]}{caption.image.url}" if not caption.image.url.startswith('http') else caption.image.url
     } for caption in captions])
 
 @api_bp.route('/captions', methods=['POST'])
