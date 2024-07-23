@@ -65,29 +65,3 @@ def delete_caption(caption_id):
     db.session.delete(caption)
     db.session.commit()
     return '', 204
-
-@api_bp.route('/upload', methods=['POST'])
-def upload_file():
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file part'}), 400
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
-    if file:
-        filename = secure_filename(file.filename)
-        upload_folder = current_app.config['UPLOAD_FOLDER']
-        
-        # Ensure the upload folder exists
-        if not os.path.exists(upload_folder):
-            os.makedirs(upload_folder)
-
-        filepath = os.path.join(upload_folder, filename)
-        file.save(filepath)
-        
-        # Create the image record in the database
-        image = Image(url=f'/static/uploads/{filename}', is_core=False)
-        db.session.add(image)
-        db.session.commit()
-        
-        return jsonify({'message': 'File uploaded successfully', 'image_id': image.id, 'image_url': image.url}), 201
-    return jsonify({'error': 'File upload failed'}), 500
